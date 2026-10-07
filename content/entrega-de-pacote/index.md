@@ -182,7 +182,7 @@ Por fim, o servo é acionado com a função ```do_gripper```. Caso o servo falhe
 
 ```python
 if not do_gripper(drone, self.config, self.target_has_pkg):
-return ABORT
+  return ABORT
 ```
 
 Em caso de sucesso, atualizamos na blackboard a variável `has_thePkg`, flag que sinaliza que o pacote já foi entregue, e passamos para o próximo estado. 
