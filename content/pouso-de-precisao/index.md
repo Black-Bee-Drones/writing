@@ -42,7 +42,7 @@ Com Kp = 0,5 no nosso exemplo, um erro de 10 m resulta em uma velocidade de 5 m/
 O P sozinho costuma ser uma ótima solução, mas tem um ponto fraco. Perto do destino, o erro é tão pequeno que a saída do P também fica quase nula. Qualquer perturbação, como vento, atrito ou a zona morta dos atuadores, pode ser forte o bastante para impedir o drone de fechar o último trecho. Ele fica parado a alguns centímetros do alvo, e esse é o chamado **erro em regime permanente**.
 
 <div align="center">
-    <img src="assets/Drone P-Only Error Over Time.png" alt="Erro em relação ao tempo apenas com P" style="max-width: 500px; width: 100%; height: auto;"/>
+    <img src="assets/Drone P-Only Error Over Time.png" alt="Erro em relação ao tempo apenas com P, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
 </div>
 
 O Integral resolve isso acumulando o erro ao longo do tempo. Matematicamente, ele é a área sob a curva do erro:
@@ -58,7 +58,7 @@ Enquanto existir um erro, mesmo pequeno, essa área continua crescendo e soma um
 O Integral traz um efeito colateral: como ele acumula erro, pode fazer o drone **passar do ponto** (o *overshoot*) e depois precisar voltar, o que pode virar um vai e volta em torno do alvo.
 
 <div align="center">
-    <img src="assets/Posição do Drone com Controle PI.png" alt="posição ao longo do tempo com PI" style="max-width: 500px; width: 100%; height: auto;"/>
+    <img src="assets/Posição do Drone com Controle PI.png" alt="posição ao longo do tempo com PI, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
 </div>
 
 O Derivativo age como um freio. Ele é calculado pela **taxa de variação do erro**:
@@ -83,11 +83,11 @@ K_d\frac{de(t)}{dt}
 $$
 
 <div align="center">
-    <img src="assets/Calibrated Drone PID Response Plot.png" alt="Posição em relação ao tempo com o PID calibrado" style="max-width: 500px; width: 100%; height: auto;"/>
+    <img src="assets/Calibrated Drone PID Response Plot.png" alt="Posição em relação ao tempo com o PID calibrado, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
 </div>
 
 <div align="center">
-    <img src="assets/Drone PID Error Settling Curve.png" alt="Erro em relação ao tempo com PID calibrado" style="max-width: 500px; width: 100%; height: auto;"/>
+    <img src="assets/Drone PID Error Settling Curve.png" alt="Erro em relação ao tempo com PID calibrado, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
 </div>
 
 A partir dessa saída, definimos a velocidade que o drone deve executar.
