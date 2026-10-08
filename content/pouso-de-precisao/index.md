@@ -42,7 +42,7 @@ Com Kp = 0,5 no nosso exemplo, um erro de 10 m resulta em uma velocidade de 5 m/
 O P sozinho costuma ser uma ótima solução, mas tem um ponto fraco. Perto do destino, o erro é tão pequeno que a saída do P também fica quase nula. Qualquer perturbação, como vento, atrito ou a zona morta dos atuadores, pode ser forte o bastante para impedir o drone de fechar o último trecho. Ele fica parado a alguns centímetros do alvo, e esse é o chamado **erro em regime permanente**.
 
 <div align="center">
-    <img src="assets/Drone P-Only Error Over Time.png" alt="Erro em relação ao tempo apenas com P, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
+    <img src="assets/Drone Error Decay Over Time.png" alt="Erro em relação ao tempo apenas com P, valores apenas demonstrativos" style="max-width: 500px; width: 100%; height: auto;"/>
 </div>
 
 O Integral resolve isso acumulando o erro ao longo do tempo. Matematicamente, ele é a área sob a curva do erro:
