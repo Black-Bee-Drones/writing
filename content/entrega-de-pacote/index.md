@@ -15,14 +15,14 @@ tags: ["drone", "hardware", "pwm", "delivery"]
 
 ---
 
-Na robótica, o **PWM (Pulse Width Modulation)** é um conceito fundamental e muito abrangente. O controle dos motores que mantêm nosso drone no ar, por exemplo, depende dessa técnica. Neste artigo, porém, focaremos em uma aplicação mais pontual desse conceito: o acionamento de servomotores.
+Na robótica, o **PWM (Pulse Width Modulation)** é um conceito fundamental e muito abrangente. O controle dos motores que mantêm nosso drone no ar, por exemplo, depende dessa técnica. Neste artigo, porém, focaremos em uma aplicação mais pontual desse conceito: o acionamento de servo motores.
 
 Primeiro, vamos explicar o funcionamento do controle PWM e, em seguida, demonstrar como aplicamos esse conceito na **Task 3 (Package Delivery)** da Black Bee Challenge 2026. Por fim, finalizaremos com os resultados que obtivemos e o que aprendemos ao desenvolver essa missão.
 
 ## O que é o PWM?
 **PWM**, ou Pulse Width Modulation (Modulação por Largura de Pulso), é uma técnica engenhosa para obter valores analógicos (contínuos, com valores intermediários) a partir de sinais digitais (descontínuos, binários).
 
-Sistemas digitais operam em apenas dois estados extremos: ligado (HIGH) ou desligado (LOW). No entanto, muitas aplicações no mundo real precisam de estados intermediários. Se quisermos controlar o brilho de um LED ou a velocidade de rotação das hélices do nosso drone, não podemos simplesmente usar "tudo ou nada". É aí que o PWM entra em cena: ele cria a "ilusão" de um valor intermediário alternando muito rápido entre o estado ligado e o desligado.
+Sistemas digitais operam em apenas dois estados extremos: ligado (HIGH) ou desligado (LOW). No entanto, muitas aplicações no mundo real precisam de estados intermediários. Se quisermos controlar o brilho de um LED ou a velocidade de rotação das hélices do nosso drone, não podemos simplesmente usar "tudo ou nada" é preciso, portanto, fazer o uso do PWM, o qual cria a "ilusão" de um valor intermediário alternando muito rápido entre o estado ligado e o desligado.
 
 Assim, o formato desse sinal é definido por duas grandezas principais:
   1. **Frequência**: A quantidade de vezes que o ciclo de liga/desliga se repete em um segundo, medido em Hertz (Hz).
@@ -35,47 +35,47 @@ Por exemplo: se um sinal PWM tem um duty cycle de 50%, ele passa metade do tempo
 </div>
 
 ### Servos e o PWM
-Quando aplicamos PWM em um LED ou em motores DC convencionais, a variação do duty cycle imita uma variação de energia contínua. No entanto, com servomotores (como o responsável por abrir e fechar a garra que carrega o nosso pacote), a lógica muda.
+Quando aplicamos PWM em um LED ou em motores DC convencionais, a variação do duty cycle imita uma variação de energia contínua. No entanto, com servo motores (como o responsável por abrir e fechar a garra que carrega o nosso pacote), a lógica muda.
 
 Nos servos, a placa de controle lê o tempo que o pulso fica em nível HIGH (a largura do pulso) e traduz essa duração em um ângulo específico.
 
-A maioria dos servomotores trabalha em uma frequência fixa de 50 Hz. Isso significa que um pulso é enviado a cada 20 milissegundos (ms). O que determina o ângulo é quanto desses 20 ms o sinal fica ligado:
+A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso significa que um pulso é enviado a cada 20 milissegundos (ms). O que determina o ângulo é quanto desses 20 ms o sinal fica ligado:
 - Um pulso de 1 ms (duty cycle de ~5%) comanda o servo para a posição 0°;
 - Um pulso de 1,5 ms (duty cycle de ~7,5%) comanda o servo para a posição central 90°;
 - Um pulso de 2 ms (duty cycle de ~10%) comanda o servo para o limite 180°.
 
 <div align="center">
-    <img src="assets/servo_pwm_example.png" alt="Exemplo de PWM aplicado a um servomotor" style="max-width: 400px; width: 100%; height: auto;"/>
+    <img src="assets/servo_pwm_example.png" alt="Exemplo de PWM aplicado a um servo motor" style="max-width: 400px; width: 100%; height: auto;"/>
 </div>
 
-## Aplicando o PWM na missão
+## O PWM em Ação
 Na **Task 3 (Package Delivery)** do Black Bee Challenge 2026, o objetivo principal do drone era voar até a área designada, alinhar-se com a caixa e soltar o pacote de forma precisa. 
 
-Para fazer essa missão de forma autônoma, utilizamos um servomotor conectado ao mecanismo da garra, controlado diretamente via software por meio do **Nectar**, o SDK criado pela equipe Black Bee Drones. Ele abstrai em métodos e funções simples toda a programação complexa que fazíamos antes na mão, e funciona tanto no drone real quanto na simulação.
+Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado diretamente via software por meio do [**Nectar**](https://github.com/Black-Bee-Drones/nectar-sdk), o SDK criado pela equipe Black Bee Drones, o qual abstrai em métodos e funções simples toda a programação complexa que fazíamos antes de forma não modularizada e adaptada a cada nova competição, que pode ser utilizada tanto no drone real quanto na simulação via Gazebo.
 
 ### O teste de bancada
-Antes de integrar qualquer lógica de acionamento ao voo autônomo, precisamos garantir que o hardware responda corretamente e, mais importante, calibrar seus limites. Servomotores possuem batentes mecânicos: se o software enviar um pulso PWM que force o motor a girar além do que a estrutura da garra permite, as engrenagens internas podem espanar ou o motor pode queimar por sobrecarga.
+Antes de integrar qualquer lógica de acionamento ao voo autônomo, precisamos garantir que o hardware responda corretamente e, mais importante, calibrar seus limites. Servo motores possuem batentes mecânicos: se o software enviar um pulso PWM que force o motor a girar além do que a estrutura da garra permite, as engrenagens internas podem espanar ou o motor pode queimar por sobrecarga.
 
-Para fazer essa calibração com segurança, utilizamos o script interativo `servo_test.py` presente no **Nectar**.   
+Para fazer essa calibração com segurança, utilizamos o script interativo, presente no SDK, [`servo_test.py`](https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py)   
 
-#### Como o script funciona por baixo dos panos?
-O script opera como um terminal iterativo (um *REPL*). Ao ser iniciado, ele estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada, enviando o valor exato de PWM direto para o canal especificado. 
+#### Como o script funciona?
+O script opera como um terminal iterativo (um *REPL*). Ao ser iniciado, ele estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada, enviando o valor exato de PWM direto para o canal AUX especificado. 
 
-#### O processo de calibração
+##### O processo de calibração
 Iniciamos o script informando a porta de comunicação e o canal do servo (neste caso, o canal 2):
 
 ```bash
 python3 servo_test.py --drone mavlink --connection /dev/ttyAMA1 --channel 2
 ```  
 
-Depois, fomos testando os valores por meio de comandos diretos de PWM, como no exemplo:
+Depois, testamos os valores por meio de comandos diretos de PWM, como no exemplo:
 
 ```bash
 servo> ch 2              # Alterna para o canal de AUX OUT desejado
 servo> 1500              # Envia um pulso de 1500µs
 ```
 
-Na prática, não usamos os extremos teóricos (1000µs e 2000µs), porque cada mecanismo tem seus próprios batentes físicos. Então, foi por meio desse mapeamento na bancada que alcançamos oss valores exatos de PWM (1400 e 1900) que mais tarde iriam para o código principal do voo.
+Na prática, não usamos os extremos teóricos (1000µs e 2000µs), porque cada mecanismo tem seus próprios batentes físicos. Então, por meio desse mapeamento na bancada que alcançamos os valores exatos de PWM (1400 e 1900) que mais tarde iriam para o código principal do voo.
 
 ### Configurando a garra
 Com os valores mapeados nos testes, definimos qual canal o servo está conectado e os limiares de PWM para o manuseio do pacote no arquivo `constants.py` da missão.
@@ -92,7 +92,7 @@ servo_closed_pwm : int = 1900   # Pulso em microssegundos para fechar a garra
 Assim como em outras partes da nossa arquitetura, o controle geral da missão é estruturado como uma máquina de estados utilizando a biblioteca `YASMIN`. Nesse sentido, a ação de soltar o pacote acontece em um estado específico chamado `Gripper`, que é chamado logo após a centralização do drone com a caixa.
 
 #### Comunicação com o servo e a lógica de *Retries*
-Na robótica do mundo real, a comunicação serial entre a Raspberry Pi e a controladora de voo pode sofrer ruídos ou perder pacotes esporádicos. Um comando MAVLink mandando o servo abrir a garra pode simplesmente se perder no caminho.
+Na robótica do mundo real, a comunicação serial entre a Raspberry Pi e a controladora de voo pode sofrer ruídos ou perder pacotes esporádicos. Um comando MAVLink mandando o servo abrir a garra pode simplesmente não ser executado.
 
 Se isso acontecer, abortar a missão inteira seria um desperdício. Por isso, desenvolvemos a função auxiliar `do_gripper`, construída com uma lógica de tolerância a falhas (ou *retries*):
 
@@ -156,7 +156,7 @@ return False
 #### Aplicação no código da missão
 Com a comunicação com o servo protegida, inserimos essa função no estado `Gripper`. 
 
-É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está carregando a caixa. 
+É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma quadro de memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está carregando a caixa. 
 
 Primeiro, realizamos algumas verificações para checar se as variáveis que iremos utilizar estão presentes na blackboard.
 
@@ -193,8 +193,39 @@ yasmin.YASMIN_LOG_INFO("Completed successfully.")
 return SUCCEED
 ```
 
-## Resultados no dia da missão
-explicar que no dia deu errado, mas por conta do modelo de detecção. nos testes, a garra funcionou perfeitamente
+## Problemas Enfrentados
+Apesar de a lógica e do controle PWM da garra estarem consolidados, a execução no dia da competição nos apresentou desafios práticos de hardware e visão computacional:
+
+1. **Iluminação excessiva devido ao ambiente ensolarado**:
+   
+    No dia da prova, o sol forte fez com que as caixas fossem capturadas pela câmera como grandes "borrões" brancos devido à superexposição. Como nosso modelo de detecção de objetos havia sido treinado sem técnicas de *data augmentation* e utilizando fotos tiradas sob condições de céu nublado, o sistema inicialmente não conseguiu reconhecer os alvos. 
+   
+    Para contornar essa situação no local, realizamos um *fine-tuning* emergencial do modelo e ajustamos o nível de claridade da câmera via linha de comando utilizando o utilitário **v4l2-ctl**, proveniente do Video4Linux2 (V4L2) — uma coleção de drivers e APIs do ecossistema Linux voltada para o controle direto de dispositivos de captura de vídeo em tempo real.
+
+    Primeiramente, identificamos qual era o caminho da câmera conectada através do comando bash: 
+    ```bash
+    v4l2-ctl --list-devices
+    ```
+    
+    Esse comando exibe todos os dispositivos de vídeo detectados e mapeados no diretório `/dev/` (como `/dev/video0`, `/dev/video1`, etc.).
+
+    Posteriormente, especificamos, através do parâmetro -d o arquivo de dispositivo referente ao sensor da câmera conectado ao sistema (como `/dev/video0` para a câmera principal ou USB principal do Linux). Através da flag --set-ctrl, é possível sobrescrever configurações do sensor, tais como exposição, ganho, contraste e brilho. A maioria dos drivers de câmera define o controle de brilho (brightness) em uma escala numérica de 0 a 255 (onde 0 representa o nível mínimo de brilho e 255 a saturação máxima, tendo o valor 128 como padrão comum).
+
+    Após realizarmos testes empíricos de iluminação na arena para equilibrar o contraste das imagens e evitar o estouro de brancos nas caixas, reduzimos o brilho da câmera para a metade do limite padrão (brightness=50), executando o comando via terminal:
+   
+    ```bash
+    v4l2-ctl -d /dev/video0 --set-ctrl brightness=50
+    ```
+
+2. **Imprecisão do GPS**:
+
+    Tivemos oscilações e desvios nas leituras do GPS que dificultaram a aproximação e o alinhamento autônomo do drone com a caixa alvo. Em cenários reais de competição com múltiplos alvos próximos, a variação de precisão do GPS torna um desafio crítico fazer o drone focar exclusivamente na caixa objetivo correta sem divergir em direção a outros objetos na arena.
+
+    Infelizmente, durante a janela de voo da competição, não foi possível implementar uma solução definitiva para compensar essa variação do GPS no alinhamento fina
 
 ## Conclusão
-conclusão uau
+Embora as intercorrências com as condições de iluminação e a precisão do GPS tenham imposto desafios significativos ao voo autônomo e à navegação até a caixa, o módulo de controle da garra `gripper.py` e a integração do sinal PWM via MAVLink funcionaram perfeitamente durante todos os acionamentos e testes.
+
+A implementação da técnica de PWM aliada à lógica de tolerância a falhas (retries) provou ser extremamente robusta e confiável, garantindo que os pulsos de comando para abertura e fechamento do servo fossem entregues sem perdas.
+
+Desenvolver e validar essa solução — desde a calibração de bancada com o `servo_test.py` até a estruturação da máquina de estados no `YASMIN` — nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o **Nectar SDK**, além do manuseio prático de atuadores físicos e da gestão de imprevistos no campo da robótica autônoma, sobretudo de drones.
