@@ -51,22 +51,22 @@ A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso sign
 ## O PWM em Ação
 Na **Task 3 (Package Delivery)** do Black Bee Challenge 2026, o objetivo principal do drone era voar até a área designada, alinhar-se com a caixa e soltar o pacote de forma precisa. 
 
-Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado diretamente via software por meio do [**Nectar**](https://github.com/Black-Bee-Drones/nectar-sdk), o SDK criado pela equipe Black Bee Drones, o qual abstrai em métodos e funções simples toda a programação complexa que fazíamos antes de forma não modularizada e adaptada a cada nova competição, que pode ser utilizada tanto no drone real quanto na simulação via Gazebo.
+Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado diretamente via software por meio do [**Nectar**](https://github.com/Black-Bee-Drones/nectar-sdk), o SDK criado pela equipe Black Bee Drones, o qual abstrai em métodos e funções simples toda a programação complexa que fazíamos antes de forma não modularizada e adaptada a cada nova competição, que pode ser utilizado tanto no drone real quanto na simulação via Gazebo.
 
 ### O teste de bancada
 Antes de integrar qualquer lógica de acionamento ao voo autônomo, precisamos garantir que o hardware responda corretamente e, mais importante, calibrar seus limites. Servo motores possuem batentes mecânicos: se o software enviar um pulso PWM que force o motor a girar além do que a estrutura da garra permite, as engrenagens internas podem espanar ou o motor pode queimar por sobrecarga.
 
-Para fazer essa calibração com segurança, utilizamos o script interativo, presente no SDK, [`servo_test.py`](https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py)   
+Para fazer essa calibração com segurança, utilizamos o script interativo, presente no SDK, [`servo_test.py`](https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py)
 
 #### Como o script funciona?
-O script opera como um terminal iterativo (um *REPL*). Ao ser iniciado, ele estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada, enviando o valor exato de PWM direto para o canal AUX especificado. 
+O script opera como um terminal iterativo (um *REPL*). Ao ser iniciado, ele estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada, enviando o valor exato de PWM direto para o canal AUX especificado.
 
 ##### O processo de calibração
 Iniciamos o script informando a porta de comunicação e o canal do servo (neste caso, o canal 2):
 
 ```bash
 python3 servo_test.py --drone mavlink --connection /dev/ttyAMA1 --channel 2
-```  
+```
 
 Depois, testamos os valores por meio de comandos diretos de PWM, como no exemplo:
 
@@ -105,18 +105,18 @@ def do_gripper(drone, config: Config, closed: bool) -> bool:
     # Loop for com a lógica de tentativas
     for attempt in range(1, retries + 1):
         yasmin.YASMIN_LOG_INFO(f"Set {pwm} pwm (attempt {attempt}/{retries})")
-        
+
         # Tenta enviar o comando de servo à controladora de voo
         if drone.do_servo(aux_out=config.servo_channel, pwm_value=pwm):
             drone.delay(config.servo_action_delay)
             return True
-            
+
         yasmin.YASMIN_LOG_WARN(f"do_servo failed (attempt {attempt}/{retries})")
-        
+
         # Se falhou, espera um tempo antes de tentar de novo
         if attempt < retries:
             drone.delay(config.servo_retry_delay)
-            
+
     yasmin.YASMIN_LOG_ERROR("Failed to do servo.")
     return False
 ```
@@ -133,20 +133,20 @@ Em seguida, em vez de mandar o pulso uma única vez, usamos um laço for da segu
 ```python
 for attempt in range(1, retries + 1):
     yasmin.YASMIN_LOG_INFO(f"Set {pwm} pwm (attempt {attempt}/{retries})")
-    
+
     if drone.do_servo(aux_out=config.servo_channel, pwm_value=pwm):
         drone.delay(config.servo_action_delay)
         return True
-        
+
     yasmin.YASMIN_LOG_WARN(f"do_servo failed (attempt {attempt}/{retries})")
-    
+
     if attempt < retries:
         drone.delay(config.servo_retry_delay)
 ```
 
-Assim, o comando `drone.do_servo` tenta enviar o sinal para a controladora. Se retornar sucesso, aplicamos um delay de três segundos (`servo_action_delay`) para dar tempo mecânico de a garra abrir completamente e o pacote cair antes de o drone voltar a se mover. Caso o envio falhe, enviamos um log de aviso (*warning*) e aguardamos meio segundo (`servo_retry_delay`) antes da próxima tentativa. 
+Assim, o comando `drone.do_servo` tenta enviar o sinal para a controladora. Se retornar sucesso, aplicamos um delay de três segundos (`servo_action_delay`) para dar tempo mecânico de a garra abrir completamente e o pacote cair antes de o drone voltar a se mover. Caso o envio falhe, enviamos um log de aviso (*warning*) e aguardamos meio segundo (`servo_retry_delay`) antes da próxima tentativa.
 
-Por fim, se esgotarmos todas as tentativas e sairmos do loop, a função retorna `False`. 
+Por fim, se esgotarmos todas as tentativas e sairmos do loop, a função retorna `False`.
 
 ```python
 yasmin.YASMIN_LOG_ERROR("Failed to do servo.")
@@ -154,9 +154,9 @@ return False
 ```
 
 #### Aplicação no código da missão
-Com a comunicação com o servo protegida, inserimos essa função no estado `Gripper`. 
+Com a comunicação com o servo protegida, inserimos essa função no estado `Gripper`.
 
-É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma quadro de memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está carregando a caixa. 
+É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está carregando a caixa.
 
 Primeiro, realizamos algumas verificações para checar se as variáveis que iremos utilizar estão presentes na blackboard.
 
@@ -185,7 +185,7 @@ if not do_gripper(drone, self.config, self.target_has_pkg):
   return ABORT
 ```
 
-Em caso de sucesso, atualizamos na blackboard a variável `has_thePkg`, flag que sinaliza que o pacote já foi entregue, e passamos para o próximo estado. 
+Em caso de sucesso, atualizamos na blackboard a variável `has_thePkg`, flag que sinaliza que o pacote já foi entregue, e passamos para o próximo estado.
 
 ```python
 blackboard["has_thePkg"] = self.target_has_pkg
@@ -193,39 +193,22 @@ yasmin.YASMIN_LOG_INFO("Completed successfully.")
 return SUCCEED
 ```
 
-## Problemas Enfrentados
-Apesar de a lógica e do controle PWM da garra estarem consolidados, a execução no dia da competição nos apresentou desafios práticos de hardware e visão computacional:
+## Resultados no dia da missão
+Apesar do sucesso em dias de teste, no dia da competição sempre ocorrem imprevistos. Na *Black Bee Challenge 2026* não foi diferente, e enfrentamos alguns desafios:
 
-1. **Iluminação excessiva devido ao ambiente ensolarado**:
-   
-    No dia da prova, o sol forte fez com que as caixas fossem capturadas pela câmera como grandes "borrões" brancos devido à superexposição. Como nosso modelo de detecção de objetos havia sido treinado sem técnicas de *data augmentation* e utilizando fotos tiradas sob condições de céu nublado, o sistema inicialmente não conseguiu reconhecer os alvos. 
-   
-    Para contornar essa situação no local, realizamos um *fine-tuning* emergencial do modelo e ajustamos o nível de claridade da câmera via linha de comando utilizando o utilitário **v4l2-ctl**, proveniente do Video4Linux2 (V4L2) — uma coleção de drivers e APIs do ecossistema Linux voltada para o controle direto de dispositivos de captura de vídeo em tempo real.
+1. **Saturação de imagem por superexposição:** O nosso modelo de visão computacional para a detecção da área de entrega havia sido treinado majoritariamente com datasets capturados em dias nublados, enquanto as caixas, no dia da competição, apareciam "estouradas" na câmera (como borrões brancos), por conta do dia ensolarado. Assim, o modelo não conseguia reconhecer o alvo e, por consequência, o drone não centralizava.
+2. **Oscilação do sinal GPS:** Enfrentamos oscilações nas estimativas de posição do drone baseadas no GPS. Em um cenário com muitos alvos próximos, a falta de uma precisão na aproximação da caixa dificultava ainda mais a detecção da caixa pelo modelo, já que o drone não se posicionava tão próximo da área de entrega.
 
-    Primeiramente, identificamos qual era o caminho da câmera conectada através do comando bash: 
-    ```bash
-    v4l2-ctl --list-devices
-    ```
-    
-    Esse comando exibe todos os dispositivos de vídeo detectados e mapeados no diretório `/dev/` (como `/dev/video0`, `/dev/video1`, etc.).
-
-    Posteriormente, especificamos, através do parâmetro -d o arquivo de dispositivo referente ao sensor da câmera conectado ao sistema (como `/dev/video0` para a câmera principal ou USB principal do Linux). Através da flag --set-ctrl, é possível sobrescrever configurações do sensor, tais como exposição, ganho, contraste e brilho. A maioria dos drivers de câmera define o controle de brilho (brightness) em uma escala numérica de 0 a 255 (onde 0 representa o nível mínimo de brilho e 255 a saturação máxima, tendo o valor 128 como padrão comum).
-
-    Após realizarmos testes empíricos de iluminação na arena para equilibrar o contraste das imagens e evitar o estouro de brancos nas caixas, reduzimos o brilho da câmera para a metade do limite padrão (brightness=50), executando o comando via terminal:
-   
-    ```bash
-    v4l2-ctl -d /dev/video0 --set-ctrl brightness=50
-    ```
-
-2. **Imprecisão do GPS**:
-
-    Tivemos oscilações e desvios nas leituras do GPS que dificultaram a aproximação e o alinhamento autônomo do drone com a caixa alvo. Em cenários reais de competição com múltiplos alvos próximos, a variação de precisão do GPS torna um desafio crítico fazer o drone focar exclusivamente na caixa objetivo correta sem divergir em direção a outros objetos na arena.
-
-    Infelizmente, durante a janela de voo da competição, não foi possível implementar uma solução definitiva para compensar essa variação do GPS no alinhamento fina
+Devido à janela restrita de voo oficial, não houve tempo para compensar o erro do GPS ou adaptar a exposição da câmera e os limiares do modelo de visão. Como a arquitetura da nossa máquina de estados exige que o drone esteja perfeitamente centralizado no alvo para avançar, o estado `Gripper` — e toda a nossa lógica de PWM — acabou não sendo acionado em arena.
 
 ## Conclusão
-Embora as intercorrências com as condições de iluminação e a precisão do GPS tenham imposto desafios significativos ao voo autônomo e à navegação até a caixa, o módulo de controle da garra `gripper.py` e a integração do sinal PWM via MAVLink funcionaram perfeitamente durante todos os acionamentos e testes.
+A **Task 3** provou que o acionamento de hardware, quando bem isolado e calibrado, torna-se uma das partes mais confiáveis de uma missão. Embora as intercorrências com as condições de iluminação e a precisão do GPS tenham imposto desafios significativos ao voo autônomo e à navegação até a caixa, o módulo de controle da garra (`gripper.py`) e a integração do sinal PWM via *MAVLink* funcionaram perfeitamente durante todos os acionamentos e testes.
 
-A implementação da técnica de PWM aliada à lógica de tolerância a falhas (retries) provou ser extremamente robusta e confiável, garantindo que os pulsos de comando para abertura e fechamento do servo fossem entregues sem perdas.
+Todo o processo de desenvolvimento da missão nos deixou algumas lições:
 
-Desenvolver e validar essa solução — desde a calibração de bancada com o `servo_test.py` até a estruturação da máquina de estados no `YASMIN` — nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o **Nectar SDK**, além do manuseio prático de atuadores físicos e da gestão de imprevistos no campo da robótica autônoma, sobretudo de drones.
+- **Uma arquitetura segura sabe quando não agir.** O fato de a garra não ter soltado o pacote no vazio não foi um erro, mas sim um sucesso. A regra de apenas entrar no estado de drop com o alvo detectado e centralizado evitou uma entrega no local errado.
+- **O valor da modularização.** Desenvolver e validar essa solução, desde a calibração de bancada até a estruturação da máquina de estados, nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o *Nectar SDK*.
+
+Para as próximas missões, pretendemos tornar nossa visão computacional mais robusta, além de explorar estratégias caso o alvo principal não seja detectado de imediato.
+
+Se você curtiu este estudo e quer saber mais sobre o desenvolvimento de drones autônomos, acompanhe o trabalho da *Black Bee Drones* e continue conosco nos próximos artigos.
