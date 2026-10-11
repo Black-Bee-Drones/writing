@@ -22,7 +22,7 @@ Primeiro, vamos explicar o funcionamento do controle PWM e, em seguida, demonstr
 ## O que é o PWM?
 **PWM**, ou Pulse Width Modulation (Modulação por Largura de Pulso), é uma técnica engenhosa para obter valores analógicos (contínuos, com valores intermediários) a partir de sinais digitais (descontínuos, binários).
 
-Sistemas digitais operam em apenas dois estados extremos: ligado (HIGH) ou desligado (LOW). No entanto, muitas aplicações no mundo real precisam de estados intermediários. Se quisermos controlar o brilho de um LED ou a velocidade de rotação das hélices do nosso drone, não podemos simplesmente usar "tudo ou nada" é preciso, portanto, fazer o uso do PWM, o qual cria a "ilusão" de um valor intermediário alternando muito rápido entre o estado ligado e o desligado.
+Sistemas digitais operam em apenas dois estados: ligado (HIGH) ou desligado (LOW). No entanto, muitas aplicações no mundo real precisam de estados intermediários. Se quisermos controlar o brilho de um LED ou a velocidade de rotação das hélices do nosso drone, não podemos simplesmente usar "tudo ou nada". É preciso, portanto, fazer o uso do PWM, técnica que cria a "ilusão" de um valor intermediário ao alternar muito rapidamente entre os estados de ligado e desligado.
 
 Assim, o formato desse sinal é definido por duas grandezas principais:
   1. **Frequência**: A quantidade de vezes que o ciclo de liga/desliga se repete em um segundo, medido em Hertz (Hz).
@@ -35,11 +35,11 @@ Por exemplo: se um sinal PWM tem um duty cycle de 50%, ele passa metade do tempo
 </div>
 
 ### Servos e o PWM
-Quando aplicamos PWM em um LED ou em motores DC convencionais, a variação do duty cycle imita uma variação de energia contínua. No entanto, com servo motores (como o responsável por abrir e fechar a garra que carrega o nosso pacote), a lógica muda.
+Quando aplicamos PWM em um LED ou em motores DC convencionais, a variação do duty cycle imita uma variação de energia contínua. No entanto, quando lidamos com servo motores, a lógica muda.
 
-Nos servos, a placa de controle lê o tempo que o pulso fica em nível HIGH (a largura do pulso) e traduz essa duração em um ângulo específico.
+Nos servos, a placa de controle lê o tempo que o pulso fica em nível HIGH (a chamada "largura do pulso") e traduz essa duração em um ângulo específico.
 
-A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso significa que um pulso é enviado a cada 20 milissegundos (ms). O que determina o ângulo é quanto desses 20 ms o sinal fica ligado:
+A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso significa que um pulso é enviado a cada 20 milissegundos (ms). Dessa forma, o que determina o ângulo do servomotor é quanto desses 20 ms o sinal fica ligado. Por exemplo:
 - Um pulso de 1 ms (duty cycle de ~5%) comanda o servo para a posição 0°;
 - Um pulso de 1,5 ms (duty cycle de ~7,5%) comanda o servo para a posição central 90°;
 - Um pulso de 2 ms (duty cycle de ~10%) comanda o servo para o limite 180°.
@@ -51,31 +51,31 @@ A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso sign
 ## O PWM em Ação
 Na **Task 3 (Package Delivery)** do Black Bee Challenge 2026, o objetivo principal do drone era voar até a área designada, alinhar-se com a caixa e soltar o pacote de forma precisa. 
 
-Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado diretamente via software por meio do [**Nectar**](https://github.com/Black-Bee-Drones/nectar-sdk), o SDK criado pela equipe Black Bee Drones, o qual abstrai em métodos e funções simples toda a programação complexa que fazíamos antes de forma não modularizada e adaptada a cada nova competição, que pode ser utilizado tanto no drone real quanto na simulação via Gazebo.
+Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado via software por meio do [**Nectar**](https://github.com/Black-Bee-Drones/nectar-sdk), o SDK criado pela equipe Black Bee Drones.
 
 ### O teste de bancada
 Antes de integrar qualquer lógica de acionamento ao voo autônomo, precisamos garantir que o hardware responda corretamente e, mais importante, calibrar seus limites. Servo motores possuem batentes mecânicos: se o software enviar um pulso PWM que force o motor a girar além do que a estrutura da garra permite, as engrenagens internas podem espanar ou o motor pode queimar por sobrecarga.
 
-Para fazer essa calibração com segurança, utilizamos o script interativo, presente no SDK, [`servo_test.py`](https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py)
+Para fazer essa calibração com segurança, utilizamos o script interativo [`servo_test.py`](https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py), presente no **Nectar**.
 
 #### Como o script funciona?
-O script opera como um terminal iterativo (um *REPL*). Ao ser iniciado, ele estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada, enviando o valor exato de PWM direto para o canal AUX especificado.
+Ao ser iniciado, o script estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o `/dev/ttyAMA1`). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada e executa uma ação específica.
 
 ##### O processo de calibração
-Iniciamos o script informando a porta de comunicação e o canal do servo (neste caso, o canal 2):
+Primeiro, iniciamos o script informando a porta de comunicação:
 
 ```bash
-python3 servo_test.py --drone mavlink --connection /dev/ttyAMA1 --channel 2
+python3 servo_test.py --drone mavlink --connection /dev/ttyAMA1
 ```
 
-Depois, testamos os valores por meio de comandos diretos de PWM, como no exemplo:
+Depois, informamos o canal do servo (neste caso, o canal 2) e testamos os valores por meio de comandos diretos de PWM, como no exemplo:
 
 ```bash
 servo> ch 2              # Alterna para o canal de AUX OUT desejado
 servo> 1500              # Envia um pulso de 1500µs
 ```
 
-Na prática, não usamos os extremos teóricos (1000µs e 2000µs), porque cada mecanismo tem seus próprios batentes físicos. Então, por meio desse mapeamento na bancada que alcançamos os valores exatos de PWM (1400 e 1900) que mais tarde iriam para o código principal do voo.
+Na prática, não usamos os extremos teóricos (1000µs e 2000µs), porque cada mecanismo tem seus próprios batentes físicos. Então, foi por meio desse mapeamento na bancada que encontramos os valores de PWM corretos para a nossa garra.
 
 ### Configurando a garra
 Com os valores mapeados nos testes, definimos qual canal o servo está conectado e os limiares de PWM para o manuseio do pacote no arquivo `constants.py` da missão.
@@ -83,7 +83,7 @@ Com os valores mapeados nos testes, definimos qual canal o servo está conectado
 Trecho extraído do arquivo com as constantes:
 ```python
 # Gripper Controller
-servo_channel : int = 2         # Número da porta AUX OUT
+servo_channel : int = 2         # Número da porta
 servo_open_pwm : int = 1400     # Pulso em microssegundos para abrir a garra
 servo_closed_pwm : int = 1900   # Pulso em microssegundos para fechar a garra
 ```
@@ -92,7 +92,7 @@ servo_closed_pwm : int = 1900   # Pulso em microssegundos para fechar a garra
 Assim como em outras partes da nossa arquitetura, o controle geral da missão é estruturado como uma máquina de estados utilizando a biblioteca `YASMIN`. Nesse sentido, a ação de soltar o pacote acontece em um estado específico chamado `Gripper`, que é chamado logo após a centralização do drone com a caixa.
 
 #### Comunicação com o servo e a lógica de *Retries*
-Na robótica do mundo real, a comunicação serial entre a Raspberry Pi e a controladora de voo pode sofrer ruídos ou perder pacotes esporádicos. Um comando MAVLink mandando o servo abrir a garra pode simplesmente não ser executado.
+Na robótica do mundo real, a comunicação serial entre a Raspberry Pi e a controladora de voo pode sofrer ruídos ou perder pacotes esporádicos. Assim, um comando MAVLink mandando o servo abrir a garra pode simplesmente não ser executado.
 
 Se isso acontecer, abortar a missão inteira seria um desperdício. Por isso, desenvolvemos a função auxiliar `do_gripper`, construída com uma lógica de tolerância a falhas (ou *retries*):
 
@@ -113,7 +113,7 @@ def do_gripper(drone, config: Config, closed: bool) -> bool:
 
         yasmin.YASMIN_LOG_WARN(f"do_servo failed (attempt {attempt}/{retries})")
 
-        # Se falhou, espera um tempo antes de tentar de novo
+        # Se falhou, espera um tempo e tenta de novo
         if attempt < retries:
             drone.delay(config.servo_retry_delay)
 
@@ -144,7 +144,7 @@ for attempt in range(1, retries + 1):
         drone.delay(config.servo_retry_delay)
 ```
 
-Assim, o comando `drone.do_servo` tenta enviar o sinal para a controladora. Se retornar sucesso, aplicamos um delay de três segundos (`servo_action_delay`) para dar tempo mecânico de a garra abrir completamente e o pacote cair antes de o drone voltar a se mover. Caso o envio falhe, enviamos um log de aviso (*warning*) e aguardamos meio segundo (`servo_retry_delay`) antes da próxima tentativa.
+Assim, o comando `drone.do_servo` tenta enviar o sinal para a controladora. Se retornar sucesso, aplicamos um delay de três segundos (`servo_action_delay`) para dar tempo de a garra abrir completamente e o pacote cair antes de o drone voltar a se mover. Caso o envio falhe, enviamos um log de aviso (*warning*) e aguardamos meio segundo (`servo_retry_delay`) antes da próxima tentativa.
 
 Por fim, se esgotarmos todas as tentativas e sairmos do loop, a função retorna `False`.
 
@@ -156,7 +156,7 @@ return False
 #### Aplicação no código da missão
 Com a comunicação com o servo protegida, inserimos essa função no estado `Gripper`.
 
-É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está carregando a caixa.
+É importante mencionar que a biblioteca `YASMIN` utiliza um conceito chamado `Blackboard`, que funciona como uma memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está ou não carregando o pacote.
 
 Primeiro, realizamos algumas verificações para checar se as variáveis que iremos utilizar estão presentes na blackboard.
 
@@ -197,17 +197,17 @@ return SUCCEED
 Apesar do sucesso em dias de teste, no dia da competição sempre ocorrem imprevistos. Na *Black Bee Challenge 2026* não foi diferente, e enfrentamos alguns desafios:
 
 1. **Saturação de imagem por superexposição:** O nosso modelo de visão computacional para a detecção da área de entrega havia sido treinado majoritariamente com datasets capturados em dias nublados, enquanto as caixas, no dia da competição, apareciam "estouradas" na câmera (como borrões brancos), por conta do dia ensolarado. Assim, o modelo não conseguia reconhecer o alvo e, por consequência, o drone não centralizava.
-2. **Oscilação do sinal GPS:** Enfrentamos oscilações nas estimativas de posição do drone baseadas no GPS. Em um cenário com muitos alvos próximos, a falta de uma precisão na aproximação da caixa dificultava ainda mais a detecção da caixa pelo modelo, já que o drone não se posicionava tão próximo da área de entrega.
+2. **Oscilação do sinal GPS:** Enfrentamos oscilações nas estimativas de posição do drone baseadas no GPS. Dessa forma, a falta de uma precisão dificultava ainda mais a detecção pelo modelo, já que o drone não se posicionava exatamente sobre a área de entrega.
 
 Devido à janela restrita de voo oficial, não houve tempo para compensar o erro do GPS ou adaptar a exposição da câmera e os limiares do modelo de visão. Como a arquitetura da nossa máquina de estados exige que o drone esteja perfeitamente centralizado no alvo para avançar, o estado `Gripper` — e toda a nossa lógica de PWM — acabou não sendo acionado em arena.
 
 ## Conclusão
-A **Task 3** provou que o acionamento de hardware, quando bem isolado e calibrado, torna-se uma das partes mais confiáveis de uma missão. Embora as intercorrências com as condições de iluminação e a precisão do GPS tenham imposto desafios significativos ao voo autônomo e à navegação até a caixa, o módulo de controle da garra (`gripper.py`) e a integração do sinal PWM via *MAVLink* funcionaram perfeitamente durante todos os acionamentos e testes.
+A **Task 3** provou que o acionamento de hardware, quando bem isolado e calibrado, torna-se uma das partes mais confiáveis de uma missão. Apesar dos obstáculos enfrentados em relação às condições de iluminação e à precisão do GPS, o módulo de controle da garra (`gripper.py`) e a integração do sinal PWM via *MAVLink* funcionaram perfeitamente durante todos os acionamentos e testes.
 
 Todo o processo de desenvolvimento da missão nos deixou algumas lições:
 
-- **Uma arquitetura segura sabe quando não agir.** O fato de a garra não ter soltado o pacote no vazio não foi um erro, mas sim um sucesso. A regra de apenas entrar no estado de drop com o alvo detectado e centralizado evitou uma entrega no local errado.
-- **O valor da modularização.** Desenvolver e validar essa solução, desde a calibração de bancada até a estruturação da máquina de estados, nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o *Nectar SDK*.
+- **Uma arquitetura segura sabe quando não agir.** A condição de apenas entrar no estado de ```Gripper``` com o alvo detectado e centralizado evitou uma entrega no local errado, além de pôr à prova a qualidade da garra elaborada pela Mecânica.
+- **O valor da modularização.** Desenvolver e validar essa solução, desde a calibração de bancada até a estruturação da máquina de estados, nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o *Nectar SDK*. Afinal, sem essa organização, teria sido muito mais complicado realizar testes e configurar o PWM da garra.
 
 Para as próximas missões, pretendemos tornar nossa visão computacional mais robusta, além de explorar estratégias caso o alvo principal não seja detectado de imediato.
 
