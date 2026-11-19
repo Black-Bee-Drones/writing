@@ -1,171 +1,174 @@
-# Repositório de Publicações - Black Bee Drones
+# Publications Repository - Black Bee Drones
 
-Este repositório é dedicado ao armazenamento, versionamento e revisão dos artigos e publicações técnicas da Black Bee Drones. O objetivo é centralizar a produção de conteúdo utilizando Markdown para garantir o histórico e facilitar a revisão por pares antes da publicação em plataformas externas, como o Medium.
+🌐 **Languages:** English (this file) · [Português](README-PT.md)
 
-Para eliminar o trabalho manual de formatação, o repositório possui um **pipeline automático**: a partir do `index.md` de cada artigo, ele gera uma página pronta para **copiar e colar no Medium**, com as imagens já apontando para URLs públicas, blocos de código íntegros e equações convertidas em embeds.
+This repository is dedicated to storing, versioning, and reviewing Black Bee Drones' technical articles and publications. The goal is to centralize content production in Markdown to preserve history and make peer review easier before publishing on external platforms such as Medium.
 
-## Sumário
+To eliminate manual formatting work, the repository has an **automatic pipeline**: from each article's `index.md`, it generates a page ready to **copy and paste into Medium**, with images already pointing to public URLs, intact code blocks, and equations converted into embeds.
 
-- [Visão geral](#visão-geral)
-- [Pré-requisitos e instalação](#pré-requisitos-e-instalação)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Padrão de arquivo (frontmatter)](#padrão-de-arquivo-frontmatter)
-- [Fluxo de trabalho](#fluxo-de-trabalho)
-- [Como escrever: o que o pipeline converte](#como-escrever-o-que-o-pipeline-converte)
-- [Equações](#equações)
-- [Comandos](#comandos)
-- [Configuração](#configuração)
-- [Automação com GitHub Actions](#automação-com-github-actions)
-- [Calibração inicial (uma única vez)](#calibração-inicial-uma-única-vez)
-- [Limitações do Medium](#limitações-do-medium)
-- [Solução de problemas](#solução-de-problemas)
-- [Estrutura interna dos scripts](#estrutura-interna-dos-scripts)
+## Table of Contents
 
-## Visão geral
+- [Overview](#overview)
+- [Prerequisites and installation](#prerequisites-and-installation)
+- [Repository structure](#repository-structure)
+- [File standard (frontmatter)](#file-standard-frontmatter)
+- [Workflow](#workflow)
+- [How to write: what the pipeline converts](#how-to-write-what-the-pipeline-converts)
+- [Equations](#equations)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [Automation with GitHub Actions](#automation-with-github-actions)
+- [Initial calibration (one time only)](#initial-calibration-one-time-only)
+- [Medium limitations](#medium-limitations)
+- [Troubleshooting](#troubleshooting)
+- [Internal structure of the scripts](#internal-structure-of-the-scripts)
+
+## Overview
 
 ```text
- você escreve                 o pipeline converte                  você publica
+ you write                    the pipeline converts                you publish
 ┌────────────────┐   merge   ┌──────────────────────────┐  pull   ┌────────────────────┐
-│ content/<nome>/│ ────────► │ medium-stories/<nome>/   │ ──────► │ abre index.html,   │
+│ content/<name>/│ ────────► │ medium-stories/<name>/   │ ──────► │ open index.html,   │
 │   index.md     │  (CI)     │   index.html  meta.md    │         │ "Copy for Medium", │
-│   assets/      │           └──────────────────────────┘         │ cola no Medium     │
+│   assets/      │           └──────────────────────────┘         │ paste into Medium  │
 └────────────────┘                                                └────────────────────┘
 ```
 
-O que é resolvido automaticamente:
+What is solved automatically:
 
-| Problema antes | Agora |
+| Problem before | Now |
 |---|---|
-| Baixar e subir imagens uma a uma no lugar certo | Caminhos locais viram URLs públicas do GitHub; o Medium baixa as imagens ao colar |
-| Blocos de código quebrados em 2 ou 3 pedaços | Linhas em branco dentro do código são protegidas |
-| Frontmatter aparecendo ou tendo de ser apagado | É removido do texto e vira um checklist de publicação (`meta.md`) |
-| Equações feitas à mão no embed.fun | Detectadas no `.md`; as URLs ficam registradas em `equations.json` |
-| Tabelas perdidas na colagem | Viram listas de tópicos |
-| Criar pasta, branch e arquivos de um novo artigo | `npm run new -- nome-do-artigo` |
+| Downloading and uploading images one by one in the right place | Local paths become public GitHub URLs; Medium downloads the images on paste |
+| Code blocks broken into 2 or 3 pieces | Blank lines inside code are protected |
+| Frontmatter showing up or having to be deleted | It is removed from the text and becomes a publishing checklist (`meta.md`) |
+| Equations made by hand on embed.fun | Detected in the `.md`; URLs are recorded in `equations.json` |
+| Tables lost on paste | They become bullet lists |
+| Creating the folder, branch, and files for a new article | `npm run new -- article-name` |
 
-## Pré-requisitos e instalação
+## Prerequisites and installation
 
-- **Node.js 22 ou superior** e Git.
-- O repositório precisa ser **público**. O Medium baixa as imagens de `raw.githubusercontent.com`, o que não funciona em repositórios privados (o CI emite um aviso se detectar repositório privado).
+- **Node.js 22 or higher** and Git.
+- The repository must be **public**. Medium downloads images from `raw.githubusercontent.com`, which does not work for private repositories (CI emits a warning if it detects a private repository).
 
 ```bash
-git clone <url-do-repositorio>
-cd <repositorio>
+git clone <repository-url>
+cd <repository>
 npm install
-npm test        # deve terminar com todos os testes passando
+npm test        # should finish with all tests passing
 ```
 
-## Estrutura do repositório
+## Repository structure
 
 ```text
 /
-├── content/                           # VOCÊ escreve aqui
-│   └── <nome-do-artigo>/
-│       ├── index.md                   # texto do artigo (com frontmatter)
-│       ├── assets/                    # imagens, gráficos e outras mídias
-│       └── equations.json             # só existe se o artigo tiver equações
+├── content/                           # YOU write here
+│   └── <article-name>/
+│       ├── index.md                   # article text (with frontmatter)
+│       ├── assets/                    # images, charts, and other media
+│       └── equations.json             # only exists if the article has equations
 │
-├── medium-stories/                    # GERADO pelo CI, não edite à mão
-│   ├── <nome-do-artigo>/
-│   │   ├── index.html                 # página pronta para copiar e colar no Medium
-│   │   └── meta.md                    # checklist de publicação (tags, subtítulo, capa...)
-│   └── REPORT.md                      # avisos e erros da última geração
+├── medium-stories/                    # GENERATED by CI, do not edit by hand
+│   ├── <article-name>/
+│   │   ├── index.html                 # page ready to copy and paste into Medium
+│   │   └── meta.md                    # publishing checklist (tags, subtitle, cover...)
+│   └── REPORT.md                      # warnings and errors from the last generation
 │
-├── scripts/                           # o pipeline (ver seção final)
-├── templates/story/index.md           # modelo usado por `npm run new`
-├── test/                              # testes automatizados
-├── .github/workflows/                 # automações do GitHub Actions
-├── medium.config.json                 # configurações do pipeline
+├── scripts/                           # the pipeline (see last section)
+├── templates/story/index.md           # template used by `npm run new`
+├── test/                              # automated tests
+├── .github/workflows/                 # GitHub Actions automations
+├── medium.config.json                 # pipeline settings
 ├── package.json
-└── README.md
+├── README.md                          # this file (English)
+└── README-PT.md                       # Portuguese version
 ```
 
-Cada diretório de artigo deve conter obrigatoriamente:
+Each article directory must contain:
 
-- Um arquivo `index.md` com o texto completo do artigo.
-- Uma subpasta `assets/` para armazenar todas as mídias referenciadas no artigo.
+- An `index.md` file with the full text of the article.
+- An `assets/` subfolder to store all media referenced in the article.
 
-Pastas locais de teste (`.medium-preview/`) são ignoradas pelo Git. Adicione ao `.gitignore`:
+Local test folders (`.medium-preview/`) are ignored by Git. Add to `.gitignore`:
 
 ```text
 node_modules/
 .medium-preview/
 ```
 
-## Padrão de arquivo (frontmatter)
+## File standard (frontmatter)
 
-Todo `index.md` deve iniciar com um bloco de metadados no topo:
+Every `index.md` must start with a metadata block at the top:
 
 ```yaml
 ---
-title: "Título descritivo do artigo"
-author: "Nome(s) do(s) Autor(es)"
+title: "Descriptive article title"
+author: "Author Name(s)"
 date: "YYYY-MM-DD"
-tags: ["drone", "hardware", "ia"]
+tags: ["drone", "hardware", "ai"]
 ---
 ```
 
-O frontmatter serve para **controle interno**: ele **não é publicado**. O pipeline o remove do texto e o transforma em um checklist (`meta.md` e o painel no topo do `index.html` gerado) com título, subtítulo sugerido, tags, imagem de capa e créditos, para você preencher na hora de publicar.
+The frontmatter is for **internal control**: it is **not published**. The pipeline removes it from the text and turns it into a checklist (`meta.md` and the panel at the top of the generated `index.html`) with title, suggested subtitle, tags, cover image, and credits, for you to fill in when publishing.
 
-Regras:
+Rules:
 
-- O corpo do texto começa imediatamente abaixo do bloco.
-- O Medium aceita **no máximo 5 tags**. Com mais de 5, o build avisa e você escolhe na publicação.
-- Se o corpo não tiver um `# Título`, o pipeline usa o `title` do frontmatter (o Medium usa o primeiro `<h1>` como título da história).
-- Campo opcional `draft: true` faz o pipeline **ignorar** o artigo enquanto ele não está pronto.
-- Qualquer outro campo que você acrescentar aparece no checklist.
+- The body text starts immediately below the block.
+- Medium accepts **at most 5 tags**. With more than 5, the build warns you and you choose at publishing time.
+- If the body has no `# Title`, the pipeline uses the frontmatter `title` (Medium uses the first `<h1>` as the story title).
+- The optional field `draft: true` makes the pipeline **skip** the article while it is not ready.
+- Any other field you add appears in the checklist.
 
-## Fluxo de trabalho
+## Workflow
 
-Para contribuir com um novo artigo:
+To contribute a new article:
 
-1. **Criação:** execute `npm run new -- nome-do-artigo`. Isso cria a branch `story/nome-do-artigo` e a pasta `content/nome-do-artigo/` com `index.md` (a partir do modelo) e `assets/`.
-   - *Alternativa:* crie e envie uma branch chamada `story/nome-do-artigo`; o GitHub Actions cria a pasta nela. Nesse caso é preciso dar `git pull` antes de escrever. O comando local é mais rápido e evita esse passo.
-2. **Escrita:** edite o `index.md` e coloque as imagens em `assets/`. Veja [Como escrever](#como-escrever-o-que-o-pipeline-converte).
-3. **Pré-visualização:** `npm run dev` gera e atualiza a página a cada salvamento em `.medium-preview/<nome>/index.html`. As imagens são lidas do disco, então **não cole essa versão no Medium**.
-4. **Equações (se houver):** `npm run equations -- nome-do-artigo` e siga a seção [Equações](#equações).
-5. **Revisão:** faça o commit, envie a branch e abra um Pull Request para a `main`. O CI roda os testes e gera uma prévia da página (artefato `medium-stories-preview` na aba *Actions*). A revisão de texto e acurácia técnica continua sendo feita pelos membros da equipe.
-6. **Aprovação:** após o merge, o CI regenera tudo e faz o commit de `medium-stories/` na branch principal.
-7. **Publicação:** `git pull`, abra `medium-stories/nome-do-artigo/index.html` no navegador, clique em **Copy for Medium** e cole em uma nova história no Medium. Percorra o `meta.md` (tags, subtítulo, capa, créditos).
+1. **Creation:** run `npm run new -- article-name`. This creates the branch `story/article-name` and the folder `content/article-name/` with `index.md` (from the template) and `assets/`.
+   - *Alternative:* create and push a branch named `story/article-name`; GitHub Actions creates the folder on it. In that case you must `git pull` before writing. The local command is faster and avoids this step.
+2. **Writing:** edit `index.md` and put the images in `assets/`. See [How to write](#how-to-write-what-the-pipeline-converts).
+3. **Preview:** `npm run dev` generates and updates the page on every save at `.medium-preview/<name>/index.html`. Images are read from disk, so **do not paste this version into Medium**.
+4. **Equations (if any):** `npm run equations -- article-name` and follow the [Equations](#equations) section.
+5. **Review:** commit, push the branch, and open a Pull Request to `main`. CI runs the tests and generates a preview of the page (`medium-stories-preview` artifact in the *Actions* tab). Review of the text and technical accuracy is still done by team members.
+6. **Approval:** after the merge, CI regenerates everything and commits `medium-stories/` to the main branch.
+7. **Publishing:** `git pull`, open `medium-stories/article-name/index.html` in the browser, click **Copy for Medium**, and paste into a new Medium story. Go through `meta.md` (tags, subtitle, cover, credits).
 
-> **Colar antes do merge:** depois de enviar a branch, rode `npm run paste -- nome-do-artigo`. Ele gera, em `.medium-preview/`, uma página com as URLs das imagens fixadas no seu último commit, que já pode ser colada no Medium. O commit precisa ter sido enviado (`git push`) antes, senão as imagens ainda não existirão no GitHub.
+> **Pasting before the merge:** after pushing the branch, run `npm run paste -- article-name`. It generates, in `.medium-preview/`, a page with image URLs pinned to your latest commit, which can already be pasted into Medium. The commit must have been pushed (`git push`) first, otherwise the images will not exist on GitHub yet.
 
-## Como escrever: o que o pipeline converte
+## How to write: what the pipeline converts
 
-Escreva Markdown normalmente. O pipeline cuida de adaptar para o Medium:
+Write Markdown as usual. The pipeline takes care of adapting it for Medium:
 
-| No `index.md` | No Medium |
+| In `index.md` | In Medium |
 |---|---|
-| `![alt](assets/foto.png)` ou `<div align="center"><img src="assets/foto.png"/></div>` | Imagem com URL pública (espaços e acentos no nome são tratados). **Arquivo inexistente ou com maiúsculas/minúsculas diferentes é erro** |
-| Linha **só em itálico** logo após uma imagem | Legenda da imagem |
-| Várias `<img>` dentro de uma mesma `<div>` | Imagens separadas (o Medium empilha; arraste-as para formar uma linha no editor) |
-| Bloco de código com linhas em branco | Permanece **um único bloco** |
-| `$$ ... $$` e `$ ... $` | Embed do embed.fun (ver [Equações](#equações)) |
-| `R$ 50`, `US$ 5`, `$` em código ou comentários | Mantidos como texto, não são equações |
-| Tabelas | Lista de tópicos: **primeira coluna** — Cabeçalho: valor; ... |
-| `##` | Heading do Medium |
-| `###`, `####`, `#####`, `######` | Subheading do Medium (o Medium só tem dois níveis) |
-| Listas aninhadas | Achatadas em um nível (limitação do Medium) |
-| Listas de tarefas (`- [ ]`) | Marcadores removidos |
-| `<!-- comentários -->` | Ignorados, inclusive imagens ou equações dentro deles |
-| `<sub>` / `<sup>` | Mantidos, mas com aviso: o Medium não tem subscrito/sobrescrito |
-| Links relativos (`./outro.md`) | Aviso: não funcionam no Medium |
+| `![alt](assets/photo.png)` or `<div align="center"><img src="assets/photo.png"/></div>` | Image with a public URL (spaces and accents in the name are handled). **A missing file, or one with different upper/lower case, is an error** |
+| A line in **italics only** right after an image | Image caption |
+| Several `<img>` inside the same `<div>` | Separate images (Medium stacks them; drag them in the editor to form a row) |
+| Code block with blank lines | Remains **a single block** |
+| `$$ ... $$` and `$ ... $` | embed.fun embed (see [Equations](#equations)) |
+| `R$ 50`, `US$ 5`, `$` in code or comments | Kept as text, not equations |
+| Tables | Bullet list: **first column** — Header: value; ... |
+| `##` | Medium heading |
+| `###`, `####`, `#####`, `######` | Medium subheading (Medium only has two levels) |
+| Nested lists | Flattened to one level (Medium limitation) |
+| Task lists (`- [ ]`) | Checkboxes removed |
+| `<!-- comments -->` | Ignored, including images or equations inside them |
+| `<sub>` / `<sup>` | Kept, but with a warning: Medium has no subscript/superscript |
+| Relative links (`./other.md`) | Warning: they do not work in Medium |
 
-Convenções úteis:
+Useful conventions:
 
-- Coloque **todas** as imagens em `assets/` e referencie com caminho relativo (`assets/nome.png`). Prefira PNG ou JPG (SVG pode não ser aceito pelo Medium).
-- Prefira nomes de arquivo sem espaços e sem acentos (funcionam, mas evitam surpresas).
-- Para legendar, escreva a legenda em itálico na linha imediatamente seguinte à imagem:
+- Put **all** images in `assets/` and reference them with a relative path (`assets/name.png`). Prefer PNG or JPG (SVG may not be accepted by Medium).
+- Prefer file names without spaces and without accents (they work, but this avoids surprises).
+- To add a caption, write it in italics on the line immediately after the image:
   ```markdown
   ![Arena](assets/arena.jpg)
 
-  *Arena utilizada no teste de voo.*
+  *Arena used in the flight test.*
   ```
-- Comentários como `<!-- IMAGEM A INSERIR -->` são um bom jeito de marcar pendências: o pipeline os ignora.
+- Comments such as `<!-- IMAGE TO INSERT -->` are a good way to mark pending items: the pipeline ignores them.
 
-## Equações
+## Equations
 
-Escreva fórmulas em LaTeX com `$$ ... $$` (o GitHub também as renderiza no próprio repositório):
+Write formulas in LaTeX with `$$ ... $$` (GitHub also renders them in the repository itself):
 
 ```markdown
 $$
@@ -173,47 +176,47 @@ P(t) = K_p \, e(t)
 $$
 ```
 
-O embed.fun só fornece a URL (`https://math.embed.fun/<id>`) depois que você publica a fórmula no site, e não há API pública, então esse único passo é manual. O pipeline automatiza todo o resto:
+embed.fun only provides the URL (`https://math.embed.fun/<id>`) after you publish the formula on the site, and there is no public API, so this single step is manual. The pipeline automates everything else:
 
-1. Execute `npm run equations -- nome-do-artigo`. Ele lista as fórmulas sem URL e cria/atualiza `content/nome-do-artigo/equations.json`:
+1. Run `npm run equations -- article-name`. It lists the formulas without a URL and creates/updates `content/article-name/equations.json`:
    ```json
    {
      "b4a28b702f": { "latex": "P(t) = K_p \\, e(t)", "url": "" }
    }
    ```
-2. Cole cada fórmula em <https://math.embed.fun>, publique e copie a URL gerada.
-3. Cole a URL no campo `"url"` da entrada correspondente e faça o commit.
+2. Paste each formula into <https://math.embed.fun>, publish it, and copy the generated URL.
+3. Paste the URL into the `"url"` field of the corresponding entry and commit.
 
-Daí em diante, todo build reaproveita a URL. A chave é um hash da fórmula: se você **editar** a fórmula, a URL antiga é marcada como não usada (remova com `npm run equations -- nome --prune`) e a nova aparece como pendente.
+From then on, every build reuses the URL. The key is a hash of the formula: if you **edit** the formula, the old URL is marked as unused (remove it with `npm run equations -- name --prune`) and the new one appears as pending.
 
-Comportamento:
+Behavior:
 
-- Uma fórmula **sem URL não quebra** o build: aparece como `⚠ PENDING EQUATION` no texto gerado e como aviso no relatório.
-- No Medium, uma URL sozinha em uma linha vira embed. Se alguma não converter após colar, coloque o cursor no fim da linha e pressione Enter. O `meta.md` lembra disso.
-- O Medium não permite matemática "no meio da frase". Uma equação dentro de um parágrafo é movida para um bloco próprio (com aviso). Prefira `$$ ... $$` em linhas separadas.
-- **Modo automático alternativo:** com `"equations": "codecogs"` em `medium.config.json`, cada equação vira uma imagem PNG gerada pelo serviço codecogs, sem `equations.json`. A desvantagem é que é uma imagem, não um embed.
+- A formula **without a URL does not break** the build: it appears as `⚠ PENDING EQUATION` in the generated text and as a warning in the report.
+- In Medium, a URL alone on a line becomes an embed. If one does not convert after pasting, put the cursor at the end of the line and press Enter. `meta.md` reminds you of this.
+- Medium does not allow math "in the middle of a sentence". An equation inside a paragraph is moved to its own block (with a warning). Prefer `$$ ... $$` on separate lines.
+- **Alternative automatic mode:** with `"equations": "codecogs"` in `medium.config.json`, each equation becomes a PNG image generated by the codecogs service, with no `equations.json`. The downside is that it is an image, not an embed.
 
-## Comandos
+## Commands
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `npm run new -- <nome>` | Cria a branch `story/<nome>` e `content/<nome>/` com `index.md` e `assets/` (`--no-branch` cria só a pasta) |
-| `npm run dev` | Prévia local que se atualiza ao salvar (saída em `.medium-preview/`) |
-| `npm run build:local` | Gera a prévia local uma vez |
-| `npm run paste -- <nome>` | Gera a versão **colável no Medium** com URLs fixadas no commit atual (envie o commit antes) |
-| `npm run equations -- [nome]` | Lista equações sem URL e mantém o `equations.json` (`--prune` remove entradas sem uso) |
-| `npm run build` | Gera `medium-stories/` (normalmente feito pelo CI) |
-| `npm run probe` | Gera uma página de teste para calibrar a colagem no Medium (ver calibração) |
-| `npm test` | Roda os testes automatizados |
+| `npm run new -- <name>` | Creates the branch `story/<name>` and `content/<name>/` with `index.md` and `assets/` (`--no-branch` creates only the folder) |
+| `npm run dev` | Local preview that updates on save (output in `.medium-preview/`) |
+| `npm run build:local` | Generates the local preview once |
+| `npm run paste -- <name>` | Generates the **Medium-pasteable** version with URLs pinned to the current commit (push the commit first) |
+| `npm run equations -- [name]` | Lists equations without a URL and maintains `equations.json` (`--prune` removes unused entries) |
+| `npm run build` | Generates `medium-stories/` (normally done by CI) |
+| `npm run probe` | Generates a test page to calibrate pasting into Medium (see calibration) |
+| `npm test` | Runs the automated tests |
 
-Opções do `build`: `--ref=<sha|branch>`, `--code=nbsp|zwsp|br|none`, `--equations=embedfun|codecogs`, `--tables=list|keep`, `--out=<pasta>`, `--strict` (avisos também falham o build). O código de saída é 1 quando há erros.
+`build` options: `--ref=<sha|branch>`, `--code=nbsp|zwsp|br|none`, `--equations=embedfun|codecogs`, `--tables=list|keep`, `--out=<folder>`, `--strict` (warnings also fail the build). The exit code is 1 when there are errors.
 
-**Erros** (falham o build): imagem inexistente, YAML inválido, `equations.json` inválido.
-**Avisos** (não falham): fórmula sem URL, mais de 5 tags, imagens lado a lado, `<sub>/<sup>`, links relativos.
+**Errors** (fail the build): missing image, invalid YAML, invalid `equations.json`.
+**Warnings** (do not fail): formula without a URL, more than 5 tags, side-by-side images, `<sub>/<sup>`, relative links.
 
-## Configuração
+## Configuration
 
-Arquivo `medium.config.json`, na raiz:
+`medium.config.json` file, at the root:
 
 ```json
 {
@@ -224,96 +227,96 @@ Arquivo `medium.config.json`, na raiz:
 }
 ```
 
-| Chave | Padrão | Significado |
+| Key | Default | Meaning |
 |---|---|---|
-| `imageRef` | `master` | Branch usada nas URLs das imagens em builds locais. No CI é automaticamente a branch que recebeu o push |
-| `equations` | `embedfun` | `embedfun` (URLs do `equations.json`) ou `codecogs` (imagens automáticas) |
-| `tables` | `list` | `list` (tabelas viram tópicos) ou `keep` (mantém `<table>`; o Medium vai achatar) |
-| `codeBlankLines` | `nbsp` | Como proteger linhas em branco em código: `nbsp`, `zwsp`, `br` ou `none` |
-| `branchPrefix` | `story/` | Prefixo das branches de artigo (se mudar, altere também `scaffold-story.yml`) |
+| `imageRef` | `master` | Branch used in image URLs in local builds. In CI it is automatically the branch that received the push |
+| `equations` | `embedfun` | `embedfun` (URLs from `equations.json`) or `codecogs` (automatic images) |
+| `tables` | `list` | `list` (tables become bullet points) or `keep` (keeps `<table>`; Medium will flatten it) |
+| `codeBlankLines` | `nbsp` | How to protect blank lines in code: `nbsp`, `zwsp`, `br`, or `none` |
+| `branchPrefix` | `story/` | Prefix for article branches (if you change it, also change `scaffold-story.yml`) |
 
-## Automação com GitHub Actions
+## Automation with GitHub Actions
 
-Dois workflows em `.github/workflows/`:
+Two workflows in `.github/workflows/`:
 
 **`build-medium.yml`**
 
-| Evento | O que acontece |
+| Event | What happens |
 |---|---|
-| Pull Request que altera `content/**` ou `scripts/**` | Roda os testes e gera a prévia como artefato `medium-stories-preview`. As imagens apontam para o commit do PR, então a prévia já é colável antes do merge |
-| Push (merge) em `main`/`master` | Regenera todos os artigos e faz o commit de `medium-stories/` com a mensagem `chore(medium): rebuild stories [skip ci]`. Se houver erros (ex.: imagem faltando), os artigos válidos ainda são commitados e a execução termina em falha |
+| Pull Request that changes `content/**` or `scripts/**` | Runs the tests and generates the preview as the `medium-stories-preview` artifact. Images point to the PR commit, so the preview is already pasteable before the merge |
+| Push (merge) to `main`/`master` | Regenerates all articles and commits `medium-stories/` with the message `chore(medium): rebuild stories [skip ci]`. If there are errors (e.g., a missing image), valid articles are still committed and the run ends in failure |
 
-O resultado é determinístico: sem mudanças no conteúdo, não há commit. O commit do bot não dispara novo build.
+The result is deterministic: with no content changes, there is no commit. The bot's commit does not trigger a new build.
 
 **`scaffold-story.yml`**
 
-Ao enviar uma branch chamada `story/<nome>`, cria `content/<nome>/` com `index.md` e `assets/` e faz o commit na própria branch.
+When a branch named `story/<name>` is pushed, it creates `content/<name>/` with `index.md` and `assets/` and commits to that same branch.
 
-Configurações necessárias no GitHub:
+Required GitHub settings:
 
-- *Settings → Actions → General → Workflow permissions*: **Read and write permissions** (para o bot fazer commits).
-- Se a branch principal for protegida, o bot precisa de permissão para ignorar a proteção, ou o último passo do workflow deve ser trocado por um PR automático.
+- *Settings → Actions → General → Workflow permissions*: **Read and write permissions** (so the bot can commit).
+- If the main branch is protected, the bot needs permission to bypass the protection, or the workflow's last step must be replaced with an automatic PR.
 
-## Calibração inicial (uma única vez)
+## Initial calibration (one time only)
 
-Como o Medium se comporta ao colar HTML só pode ser confirmado no próprio Medium, existe uma página de teste:
+Since how Medium behaves when pasting HTML can only be confirmed in Medium itself, there is a test page:
 
 ```bash
 npm run probe
 ```
 
-1. Abra `.medium-preview/_probe/index.html`, clique em **Copy for Medium** e cole em um rascunho descartável no Medium.
-2. Verifique:
-   - **Código:** das 4 variantes, quais permanecem em um único bloco (a variante `none` reproduz o problema original).
-   - **Imagem com legenda:** a imagem foi enviada e a legenda foi mantida?
-   - **Embed:** a URL do embed.fun (variante A, texto puro; variante B, link) virou embed sozinha ou só após Enter?
-3. Ajuste `codeBlankLines` em `medium.config.json` para a variante vencedora.
+1. Open `.medium-preview/_probe/index.html`, click **Copy for Medium**, and paste into a throwaway draft in Medium.
+2. Check:
+   - **Code:** of the 4 variants, which ones stay in a single block (the `none` variant reproduces the original problem).
+   - **Image with caption:** was the image uploaded and the caption kept?
+   - **Embed:** did the embed.fun URL (variant A, plain text; variant B, link) become an embed on its own or only after Enter?
+3. Set `codeBlankLines` in `medium.config.json` to the winning variant.
 
-Se nenhuma variante resolver os blocos de código, a alternativa é publicar o código como Gist do GitHub e colar a URL do Gist em uma linha própria.
+If no variant fixes the code blocks, the alternative is to publish the code as a GitHub Gist and paste the Gist URL on its own line.
 
-## Limitações do Medium
+## Medium limitations
 
-O pipeline contorna o que é possível, mas o Medium não suporta:
+The pipeline works around what it can, but Medium does not support:
 
-- **Tabelas:** convertidas em listas de tópicos.
-- **Matemática no meio do texto:** movida para um bloco próprio.
-- **Subscrito/sobrescrito** (`<sub>`, `<sup>`): o texto é colado sem a formatação (`K<sub>p</sub>` vira "Kp").
-- **Mais de um nível de lista:** listas aninhadas são achatadas.
-- **Imagens lado a lado ao colar:** ficam empilhadas; agrupe-as arrastando no editor.
-- **Mais de 5 tags** por história.
+- **Tables:** converted into bullet lists.
+- **Math in the middle of text:** moved to its own block.
+- **Subscript/superscript** (`<sub>`, `<sup>`): the text is pasted without the formatting (`K<sub>p</sub>` becomes "Kp").
+- **More than one list level:** nested lists are flattened.
+- **Side-by-side images on paste:** they end up stacked; group them by dragging in the editor.
+- **More than 5 tags** per story.
 
-## Solução de problemas
+## Troubleshooting
 
-| Sintoma | Causa provável e solução |
+| Symptom | Likely cause and fix |
 |---|---|
-| Imagens quebradas no Medium | Repositório ainda privado; ou o commit não foi enviado (no caso de `npm run paste`); ou cache do GitHub por alguns minutos |
-| `image not found` | Verifique o nome exato: no CI maiúsculas e minúsculas importam (`Foto.PNG` ≠ `foto.png`) |
-| `⚠ PENDING EQUATION` no texto | Falta a URL em `equations.json`; rode `npm run equations -- nome` |
-| Aviso "cannot determine the GitHub repo" | Adicione um `git remote` ou defina `MEDIUM_REPO=usuario/repositorio` |
-| Push do bot rejeitado | Ver permissões em [Automação](#automação-com-github-actions) |
-| Pasta sem página gerada | Falta o `index.md`, ou o frontmatter tem `draft: true` |
-| Conferir tudo que foi gerado | Leia `medium-stories/REPORT.md` (ou o resumo do job na aba *Actions*) |
+| Broken images in Medium | Repository still private; or the commit was not pushed (in the case of `npm run paste`); or GitHub cache for a few minutes |
+| `image not found` | Check the exact name: in CI upper/lower case matters (`Photo.PNG` ≠ `photo.png`) |
+| `⚠ PENDING EQUATION` in the text | The URL is missing in `equations.json`; run `npm run equations -- name` |
+| Warning "cannot determine the GitHub repo" | Add a `git remote` or set `MEDIUM_REPO=user/repository` |
+| Bot push rejected | See permissions in [Automation](#automation-with-github-actions) |
+| Folder with no generated page | `index.md` is missing, or the frontmatter has `draft: true` |
+| Check everything that was generated | Read `medium-stories/REPORT.md` (or the job summary in the *Actions* tab) |
 
-## Estrutura interna dos scripts
+## Internal structure of the scripts
 
 ```text
 scripts/
-├── new-story.mjs        # npm run new          cria pasta + branch
-├── build-medium.mjs     # npm run build        converte um ou todos os artigos
-├── equations.mjs        # npm run equations    registra URLs do embed.fun
-├── probe.mjs            # npm run probe        página de calibração
+├── new-story.mjs        # npm run new          creates folder + branch
+├── build-medium.mjs     # npm run build        converts one or all articles
+├── equations.mjs        # npm run equations    registers embed.fun URLs
+├── probe.mjs            # npm run probe        calibration page
 └── lib/
-    ├── pipeline.mjs     # orquestra as etapas, em ordem
-    ├── frontmatter.mjs  # separa e valida o cabeçalho YAML
-    ├── protect.mjs      # protege código e comentários da detecção de equações
-    ├── math.mjs         # detecta equações e consulta o equations.json
-    ├── transforms.mjs   # imagens, legendas, código, tabelas, listas, títulos
-    ├── output.mjs       # monta o index.html e o meta.md
-    ├── config.mjs       # configurações e detecção do repositório
-    ├── util.mjs         # slugify, checagem de arquivo, coletor de avisos
-    └── cli.mjs          # leitura de argumentos
+    ├── pipeline.mjs     # orchestrates the steps, in order
+    ├── frontmatter.mjs  # splits and validates the YAML header
+    ├── protect.mjs      # protects code and comments from equation detection
+    ├── math.mjs         # detects equations and looks up equations.json
+    ├── transforms.mjs   # images, captions, code, tables, lists, headings
+    ├── output.mjs       # builds index.html and meta.md
+    ├── config.mjs       # settings and repository detection
+    ├── util.mjs         # slugify, file check, warning collector
+    └── cli.mjs          # argument parsing
 ```
 
-Ordem das etapas de cada artigo: separar frontmatter → proteger código e comentários → trocar equações por marcadores → Markdown para HTML → sanitizar → ajustes para o Medium (estrutura, imagens, legendas, código) → substituir equações por embeds → gerar `index.html` e `meta.md`.
+Order of the steps for each article: split frontmatter → protect code and comments → replace equations with markers → Markdown to HTML → sanitize → Medium adjustments (structure, images, captions, code) → replace equations with embeds → generate `index.html` and `meta.md`.
 
-Para alterar o comportamento, edite o módulo correspondente e rode `npm test`; os testes cobrem, entre outros, o tratamento de `R$`, blocos de código com linhas em branco, nomes de imagem com acentos e o cabeçalho removido.
+To change the behavior, edit the corresponding module and run `npm test`; the tests cover, among other things, the handling of `R$`, code blocks with blank lines, image names with accents, and the removed header.
