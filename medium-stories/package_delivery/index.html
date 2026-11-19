@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle PWM na Entrega de Pacote — Medium paste page</title>
+<style>
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#fafaf8;color:#1a1917}
+  header{position:sticky;top:0;z-index:5;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid #ddd}
+  header .t{font-size:13px;color:#5a5955;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  button{font-size:14px;font-weight:600;font-family:inherit;padding:8px 18px;border:1px solid #1a8a6e;border-radius:7px;background:#1a8a6e;color:#fff;cursor:pointer}
+  button.ok{background:#fff;color:#1a8a6e}
+  button.fail{background:#c0392b;border-color:#c0392b}
+  .banner{margin:16px auto 0;max-width:680px;padding:10px 14px;border-radius:7px;background:#fff8e6;border:1px solid #e2c36a;color:#7a5c00;font-size:13px}
+  details{max-width:680px;margin:12px auto 0;font-size:13px}
+  summary{cursor:pointer;font-weight:600}
+  details ul{line-height:1.7;padding-left:20px}
+  .error{color:#c0392b}.warn{color:#b07d00}.info{color:#888}
+  article{max-width:680px;margin:20px auto 80px;padding:0 20px;font-family:Georgia,"Times New Roman",serif;font-size:18px;line-height:1.75}
+  article h1{font-size:34px;line-height:1.2}
+  article h2{font-size:26px;margin-top:36px}
+  article h4{font-size:20px;margin-top:28px}
+  article img{max-width:100%}
+  article figure{margin:20px 0}
+  article figcaption{font-size:14px;color:#777;text-align:center}
+  article pre{background:#f2f1ee;padding:14px;overflow-x:auto;font-size:13.5px;line-height:1.5;border-radius:6px}
+  article blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:16px;color:#555;font-style:italic}
+</style>
+</head>
+<body>
+<header>
+  <div class="t">Controle PWM na Entrega de Pacote</div>
+  <button id="copy" onclick="copyForMedium()">Copy for Medium</button>
+</header>
+
+
+<details open><summary>Publishing checklist (not copied)</summary><ul>
+<li><b>Title</b>: Controle PWM na Entrega de Pacote</li><li><b>Subtitle</b> (suggested): Como controlamos a garra via software na Task 3 da Black Bee Challenge 2026</li><li><b>Tags</b>: drone, hardware, pwm, delivery</li><li><b>Cover image</b>: assets/duty_cycle_example.png</li><li><b>Credits</b>: Ana Machado e João Fornazeiro</li><li>1808 words · ~7 min · 2 image(s)</li>
+</ul></details>
+
+<details><summary>Build notes (2)</summary><ul><li><span class="info">ℹ</span> 5 heading(s) of level 3/5/6 were mapped to Medium's Subheading (h4).</li><li><span class="info">ℹ</span> 3 code block(s) had blank lines → protected from Medium's splitting with &quot;nbsp&quot;.</li></ul></details>
+<article id="medium-content"><h1>Controle PWM na Entrega de Pacote</h1><p><em>Como controlamos a garra via software na Task 3 da Black Bee Challenge 2026</em></p><p><strong>Missão Realizada por Ana Machado e João Fornazeiro - Equipe Black Bee Drones</strong></p><p><strong>Documento feito por Ana Machado e João Fornazeiro</strong></p><hr><p>Na robótica, o <strong>PWM (Pulse Width Modulation)</strong> é um conceito fundamental e muito abrangente. O controle dos motores que mantêm nosso drone no ar, por exemplo, depende dessa técnica. Neste artigo, porém, focaremos em uma aplicação mais pontual desse conceito: o acionamento de servo motores.</p><p>Primeiro, vamos explicar o funcionamento do controle PWM e, em seguida, demonstrar como aplicamos esse conceito na <strong>Task 3 (Package Delivery)</strong> da Black Bee Challenge 2026. Por fim, finalizaremos com os resultados que obtivemos e o que aprendemos ao desenvolver essa missão.</p><h2>O que é o PWM?</h2><p><strong>PWM</strong>, ou Pulse Width Modulation (Modulação por Largura de Pulso), é uma técnica engenhosa para obter valores analógicos (contínuos, com valores intermediários) a partir de sinais digitais (descontínuos, binários).</p><p>Sistemas digitais operam em apenas dois estados: ligado (HIGH) ou desligado (LOW). No entanto, muitas aplicações no mundo real precisam de estados intermediários. Se quisermos controlar o brilho de um LED ou a velocidade de rotação das hélices do nosso drone, não podemos simplesmente usar "tudo ou nada". É preciso, portanto, fazer o uso do PWM, técnica que cria a "ilusão" de um valor intermediário ao alternar muito rapidamente entre os estados de ligado e desligado.</p><p>Assim, o formato desse sinal é definido por duas grandezas principais:</p><ol><li><strong>Frequência</strong>: A quantidade de vezes que o ciclo de liga/desliga se repete em um segundo, medido em Hertz (Hz).</li><li><strong>Duty Cycle (Ciclo de Trabalho)</strong>: A porcentagem de tempo em que o sinal permanece "ligado" (HIGH) dentro de um único ciclo, em relação ao tempo total.</li></ol><p>Por exemplo: se um sinal PWM tem um duty cycle de 50%, ele passa metade do tempo em HIGH e metade em LOW. Desse modo, supondo que o sistema opere em 5V, o componente conectado àquele pino "enxergará" uma tensão média de 2,5V.</p><figure><img src="https://raw.githubusercontent.com/Black-Bee-Drones/writing/master/content/package_delivery/assets/duty_cycle_example.png" alt="Comportamento de um sinal PWM operando em 5V"></figure><h4>Servos e o PWM</h4><p>Quando aplicamos PWM em um LED ou em motores DC convencionais, a variação do duty cycle imita uma variação de energia contínua. No entanto, quando lidamos com servo motores, a lógica muda.</p><p>Nos servos, a placa de controle lê o tempo que o pulso fica em nível HIGH (a chamada "largura do pulso") e traduz essa duração em um ângulo específico.</p><p>A maioria dos servo motores trabalha em uma frequência fixa de 50 Hz. Isso significa que um pulso é enviado a cada 20 milissegundos (ms). Dessa forma, o que determina o ângulo do servomotor é quanto desses 20 ms o sinal fica ligado. Por exemplo:</p><ul><li>Um pulso de 1 ms (duty cycle de ~5%) comanda o servo para a posição 0°;</li><li>Um pulso de 1,5 ms (duty cycle de ~7,5%) comanda o servo para a posição central 90°;</li><li>Um pulso de 2 ms (duty cycle de ~10%) comanda o servo para o limite 180°.</li></ul><figure><img src="https://raw.githubusercontent.com/Black-Bee-Drones/writing/master/content/package_delivery/assets/servo_pwm_example.png" alt="Exemplo de PWM aplicado a um servo motor"></figure><h2>O PWM em Ação</h2><p>Na <strong>Task 3 (Package Delivery)</strong> do Black Bee Challenge 2026, o objetivo principal do drone era voar até a área designada, alinhar-se com a caixa e soltar o pacote de forma precisa. </p><p>Para fazer essa missão de forma autônoma, utilizamos um servo motor conectado ao mecanismo da garra, controlado via software por meio do <a href="https://github.com/Black-Bee-Drones/nectar-sdk"><strong>Nectar</strong></a>, o SDK criado pela equipe Black Bee Drones.</p><h4>O teste de bancada</h4><p>Antes de integrar qualquer lógica de acionamento ao voo autônomo, precisamos garantir que o hardware responda corretamente e, mais importante, calibrar seus limites. Servo motores possuem batentes mecânicos: se o software enviar um pulso PWM que force o motor a girar além do que a estrutura da garra permite, as engrenagens internas podem espanar ou o motor pode queimar por sobrecarga.</p><p>Para fazer essa calibração com segurança, utilizamos o script interativo <a href="https://github.com/Black-Bee-Drones/nectar-sdk/blob/main/nectar/nectar/examples/control/servo_test.py"><code>servo_test.py</code></a>, presente no <strong>Nectar</strong>.</p><h4>Como o script funciona?</h4><p>Ao ser iniciado, o script estabelece uma conexão com a controladora de voo via protocolo MAVLink (seja por rede ou por um barramento serial, como o <code>/dev/ttyAMA1</code>). A partir daí, cada vez que digitamos um comando no terminal, o script traduz essa entrada e executa uma ação específica.</p><h4>O processo de calibração</h4><p>Primeiro, iniciamos o script informando a porta de comunicação:</p><pre><code>python3 servo_test.py --drone mavlink --connection /dev/ttyAMA1
+</code></pre><p>Depois, informamos o canal do servo (neste caso, o canal 2) e testamos os valores por meio de comandos diretos de PWM, como no exemplo:</p><pre><code>servo&gt; ch 2              # Alterna para o canal de AUX OUT desejado
+servo&gt; 1500              # Envia um pulso de 1500µs
+</code></pre><p>Na prática, não usamos os extremos teóricos (1000µs e 2000µs), porque cada mecanismo tem seus próprios batentes físicos. Então, foi por meio desse mapeamento na bancada que encontramos os valores de PWM corretos para a nossa garra.</p><h4>Configurando a garra</h4><p>Com os valores mapeados nos testes, definimos qual canal o servo está conectado e os limiares de PWM para o manuseio do pacote no arquivo <code>constants.py</code> da missão.</p><p>Trecho extraído do arquivo com as constantes:</p><pre><code># Gripper Controller
+servo_channel : int = 2         # Número da porta
+servo_open_pwm : int = 1400     # Pulso em microssegundos para abrir a garra
+servo_closed_pwm : int = 1900   # Pulso em microssegundos para fechar a garra
+</code></pre><h4>O estador Gripper</h4><p>Assim como em outras partes da nossa arquitetura, o controle geral da missão é estruturado como uma máquina de estados utilizando a biblioteca <code>YASMIN</code>. Nesse sentido, a ação de soltar o pacote acontece em um estado específico chamado <code>Gripper</code>, que é chamado logo após a centralização do drone com a caixa.</p><h4>Comunicação com o servo e a lógica de <em>Retries</em></h4><p>Na robótica do mundo real, a comunicação serial entre a Raspberry Pi e a controladora de voo pode sofrer ruídos ou perder pacotes esporádicos. Assim, um comando MAVLink mandando o servo abrir a garra pode simplesmente não ser executado.</p><p>Se isso acontecer, abortar a missão inteira seria um desperdício. Por isso, desenvolvemos a função auxiliar <code>do_gripper</code>, construída com uma lógica de tolerância a falhas (ou <em>retries</em>):</p><pre><code>def do_gripper(drone, config: Config, closed: bool) -&gt; bool:
+    # Definindo o valor de PWM com base no atual estado do servo
+    pwm = config.servo_closed_pwm if closed else config.servo_open_pwm
+    retries = max(1, int(config.servo_retries))
+&nbsp;
+    # Loop for com a lógica de tentativas
+    for attempt in range(1, retries + 1):
+        yasmin.YASMIN_LOG_INFO(f"Set {pwm} pwm (attempt {attempt}/{retries})")
+&nbsp;
+        # Tenta enviar o comando de servo à controladora de voo
+        if drone.do_servo(aux_out=config.servo_channel, pwm_value=pwm):
+            drone.delay(config.servo_action_delay)
+            return True
+&nbsp;
+        yasmin.YASMIN_LOG_WARN(f"do_servo failed (attempt {attempt}/{retries})")
+&nbsp;
+        # Se falhou, espera um tempo e tenta de novo
+        if attempt &lt; retries:
+            drone.delay(config.servo_retry_delay)
+&nbsp;
+    yasmin.YASMIN_LOG_ERROR("Failed to do servo.")
+    return False</code></pre><p>Nesta função, verificamos primeiro se queremos a garra fechada ou aberta, selecionando o PWM calibrado nas constantes (1900 ou 1400) e definimos o número máximo de tentativas.</p><pre><code>pwm = config.servo_closed_pwm if closed else config.servo_open_pwm
+retries = max(1, int(config.servo_retries))
+</code></pre><p>Em seguida, em vez de mandar o pulso uma única vez, usamos um laço for da seguinte forma:</p><pre><code>for attempt in range(1, retries + 1):
+    yasmin.YASMIN_LOG_INFO(f"Set {pwm} pwm (attempt {attempt}/{retries})")
+&nbsp;
+    if drone.do_servo(aux_out=config.servo_channel, pwm_value=pwm):
+        drone.delay(config.servo_action_delay)
+        return True
+&nbsp;
+    yasmin.YASMIN_LOG_WARN(f"do_servo failed (attempt {attempt}/{retries})")
+&nbsp;
+    if attempt &lt; retries:
+        drone.delay(config.servo_retry_delay)</code></pre><p>Assim, o comando <code>drone.do_servo</code> tenta enviar o sinal para a controladora. Se retornar sucesso, aplicamos um delay de três segundos (<code>servo_action_delay</code>) para dar tempo de a garra abrir completamente e o pacote cair antes de o drone voltar a se mover. Caso o envio falhe, enviamos um log de aviso (<em>warning</em>) e aguardamos meio segundo (<code>servo_retry_delay</code>) antes da próxima tentativa.</p><p>Por fim, se esgotarmos todas as tentativas e sairmos do loop, a função retorna <code>False</code>.</p><pre><code>yasmin.YASMIN_LOG_ERROR("Failed to do servo.")
+return False
+</code></pre><h4>Aplicação no código da missão</h4><p>Com a comunicação com o servo protegida, inserimos essa função no estado <code>Gripper</code>.</p><p>É importante mencionar que a biblioteca <code>YASMIN</code> utiliza um conceito chamado <code>Blackboard</code>, que funciona como uma memória compartilhada entre todos os estados do drone. É lá que guardamos a instância de controle do drone e a flag que indica se ele está ou não carregando o pacote.</p><p>Primeiro, realizamos algumas verificações para checar se as variáveis que iremos utilizar estão presentes na blackboard.</p><pre><code>drone = blackboard.get("drone")
+if drone is None:
+    yasmin.YASMIN_LOG_ERROR("Drone missing.")
+    return ABORT
+&nbsp;
+if "has_thePkg" not in blackboard:
+    yasmin.YASMIN_LOG_ERROR("Flag - has the pkg - not found.")
+    return ABORT</code></pre><p>Depois, ajustamos a altura do drone e zeramos o seu momento inercial, garantindo um lançamento preciso do pacote.</p><pre><code>drone.move_to(z=-0.8)
+drone.move_velocity(0.0, 0.0, 0.0)
+</code></pre><p>Por fim, o servo é acionado com a função <code>do_gripper</code>. Caso o servo falhe mais do que o número máximo de tentativas definido, abortamos a missão.</p><pre><code>if not do_gripper(drone, self.config, self.target_has_pkg):
+  return ABORT
+</code></pre><p>Em caso de sucesso, atualizamos na blackboard a variável <code>has_thePkg</code>, flag que sinaliza que o pacote já foi entregue, e passamos para o próximo estado.</p><pre><code>blackboard["has_thePkg"] = self.target_has_pkg
+yasmin.YASMIN_LOG_INFO("Completed successfully.")
+return SUCCEED
+</code></pre><h2>Resultados no dia da missão</h2><p>Apesar do sucesso em dias de teste, no dia da competição sempre ocorrem imprevistos. Na <em>Black Bee Challenge 2026</em> não foi diferente, e enfrentamos alguns desafios:</p><ol><li><strong>Saturação de imagem por superexposição:</strong> O nosso modelo de visão computacional para a detecção da área de entrega havia sido treinado majoritariamente com datasets capturados em dias nublados, enquanto as caixas, no dia da competição, apareciam "estouradas" na câmera (como borrões brancos), por conta do dia ensolarado. Assim, o modelo não conseguia reconhecer o alvo e, por consequência, o drone não centralizava.</li><li><strong>Oscilação do sinal GPS:</strong> Enfrentamos oscilações nas estimativas de posição do drone baseadas no GPS. Dessa forma, a falta de uma precisão dificultava ainda mais a detecção pelo modelo, já que o drone não se posicionava exatamente sobre a área de entrega.</li></ol><p>Devido à janela restrita de voo oficial, não houve tempo para compensar o erro do GPS ou adaptar a exposição da câmera e os limiares do modelo de visão. Como a arquitetura da nossa máquina de estados exige que o drone esteja perfeitamente centralizado no alvo para avançar, o estado <code>Gripper</code> — e toda a nossa lógica de PWM — acabou não sendo acionado em arena.</p><h2>Conclusão</h2><p>A <strong>Task 3</strong> provou que o acionamento de hardware, quando bem isolado e calibrado, torna-se uma das partes mais confiáveis de uma missão. Apesar dos obstáculos enfrentados em relação às condições de iluminação e à precisão do GPS, o módulo de controle da garra (<code>gripper.py</code>) e a integração do sinal PWM via <em>MAVLink</em> funcionaram perfeitamente durante todos os acionamentos e testes.</p><p>Todo o processo de desenvolvimento da missão nos deixou algumas lições:</p><ul><li><strong>Uma arquitetura segura sabe quando não agir.</strong> A condição de apenas entrar no estado de <code>Gripper</code> com o alvo detectado e centralizado evitou uma entrega no local errado, além de pôr à prova a qualidade da garra elaborada pela Mecânica.</li><li><strong>O valor da modularização.</strong> Desenvolver e validar essa solução, desde a calibração de bancada até a estruturação da máquina de estados, nos proporcionou um aprendizado valioso sobre a importância da modularização de software com o <em>Nectar SDK</em>. Afinal, sem essa organização, teria sido muito mais complicado realizar testes e configurar o PWM da garra.</li></ul><p>Para as próximas missões, pretendemos tornar nossa visão computacional mais robusta, além de explorar estratégias caso o alvo principal não seja detectado de imediato.</p><p>Se você curtiu este estudo e quer saber mais sobre o desenvolvimento de drones autônomos, acompanhe o trabalho da <em>Black Bee Drones</em> e continue conosco nos próximos artigos.</p></article>
+<script>
+async function copyForMedium(){
+  const btn = document.getElementById('copy');
+  const el = document.getElementById('medium-content');
+  const flash = (label, cls) => { btn.textContent = label; btn.className = cls; setTimeout(() => { btn.textContent = 'Copy for Medium'; btn.className = ''; }, 2500); };
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([el.innerHTML], { type: 'text/html' }),
+        'text/plain': new Blob([el.innerText], { type: 'text/plain' })
+      })]);
+      return flash('Copied!', 'ok');
+    } catch (e) { /* fall through to the legacy path */ }
+  }
+  const sel = getSelection(); const range = document.createRange();
+  range.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(range);
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  sel.removeAllRanges();
+  flash(ok ? 'Copied!' : 'Blocked — select all (Ctrl+A) and copy by hand', ok ? 'ok' : 'fail');
+}
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copyForMedium(); } });
+</script>
+</body>
+</html>
