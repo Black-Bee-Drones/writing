@@ -1,0 +1,92 @@
+name: Build Medium stories
+
+# PR   → build a preview you can paste into Medium BEFORE merging (downloadable artifact).
+# push → (merge to master) rebuild everything and commit the result to /medium-stories.
+on:
+  pull_request:
+    paths:
+      - 'content/**'
+      - 'scripts/**'
+      - 'test/**'
+      - 'medium.config.json'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [master]
+    # medium-stories/** is deliberately NOT listed, so the bot's own commit can't re-trigger this
+    paths:
+      - 'content/**'
+      - 'scripts/**'
+      - 'test/**'
+      - 'medium.config.json'
+      - 'package.json'
+      - 'package-lock.json'
+
+concurrency:
+  group: medium-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # images are fetched from the PR's own commit (works for PRs from forks too)
+      MEDIUM_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Warn if the repo is private
+        if: github.event.repository.private == true
+        run: echo "::warning::This repo is private, so Medium cannot download the images from raw.githubusercontent.com. Make it public (or host assets elsewhere) before pasting."
+      - name: Build stories (image URLs pinned to this PR's commit)
+        run: node scripts/build-medium.mjs --ref=${{ github.event.pull_request.head.sha }}
+      - name: Upload preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medium-stories-preview
+          path: medium-stories/
+          if-no-files-found: ignore
+
+  publish:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # lets the job push the generated files back to master
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Warn if the repo is private
+        if: github.event.repository.private == true
+        run: echo "::warning::This repo is private, so Medium cannot download the images from raw.githubusercontent.com. Make it public (or host assets elsewhere) before pasting."
+      - name: Build stories
+        id: build
+        continue-on-error: true # still commit the stories that built fine; the last step fails the run if any errored
+        run: node scripts/build-medium.mjs
+      - name: Commit generated stories
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A medium-stories
+          if git diff --cached --quiet; then echo "No changes in medium-stories/."; exit 0; fi
+          git commit -m "chore(medium): rebuild stories [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+      - name: Fail the run if the build reported errors
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "::error::Some stories have errors (missing images, invalid front matter...). See the job summary."
+          exit 1

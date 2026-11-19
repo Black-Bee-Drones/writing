@@ -1,0 +1,26 @@
+{
+  "name": "writing-medium-pipeline",
+  "version": "1.0.0",
+  "description": "Markdown stories → paste-ready Medium pages",
+  "scripts": {
+    "new": "node scripts/new-story.mjs",
+    "dev": "node --watch-path=content --watch-path=scripts scripts/build-medium.mjs --local --out=.medium-preview",
+    "build:local": "node scripts/build-medium.mjs --local --out=.medium-preview",
+    "paste": "node scripts/build-medium.mjs --out=.medium-preview --ref=$(git rev-parse HEAD)",
+    "build": "node scripts/build-medium.mjs",
+    "equations": "node scripts/equations.mjs",
+    "probe": "node scripts/probe.mjs",
+    "test": "node --test"
+  },
+  "type": "module",
+  "dependencies": {
+    "dompurify": "^3.4.18",
+    "gray-matter": "^4.0.3",
+    "jsdom": "^31.0.1",
+    "marked": "^18.2.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}
